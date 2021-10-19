@@ -1,5 +1,6 @@
 package com.Marvelchallenge.marvelAPI;
 
+import com.Marvelchallenge.marvelAPI.entities.MarvelCharacter;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -10,24 +11,33 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+
+import static java.nio.file.Paths.get;
 
 @SpringBootApplication
 public class MarvelApiApplication {
 
     public static void main(String[] args) throws IOException, ParseException {
         SpringApplication.run(MarvelApiApplication.class, args);
-        fetchFromApi();
+        FetchCharactersFromApi();
     }
 
-    public static void fetchFromApi() throws IOException, ParseException {
-        URL charactersUrl = new URL("http://gateway.marvel.com/v1/public/characters?orderBy=name&limit=100&ts=1&apikey=cccfd6b5fbfc8bc91c645fd3c39accaa&hash=d609be9bdc98ab7767176a5e3d9f1309");
+    public static HttpURLConnection CreateConnection(URL charactersUrl, String requestMethod) throws IOException {
         HttpURLConnection myHttpURLConnection = (HttpURLConnection) charactersUrl.openConnection();
-        myHttpURLConnection.setRequestMethod("GET");
+        myHttpURLConnection.setRequestMethod(requestMethod);
+
+        return myHttpURLConnection;
+    }
+
+    public static void FetchCharactersFromApi() throws IOException, ParseException {
+        URL charactersUrl = new URL(Constants.ApiUrlCharacters);
+        HttpURLConnection myHttpURLConnection = CreateConnection(charactersUrl, "GET");
         myHttpURLConnection.connect();
 
         int responseCode = myHttpURLConnection.getResponseCode();
-//        Object myObject = myHttpURLConnection.getContent(); TODO: try this and play
         if (responseCode != 200) {
             throw new RuntimeException("HttpResponseCode: " + responseCode);
         } else {
@@ -38,38 +48,48 @@ public class MarvelApiApplication {
                 content = content + scanner.nextLine();
             }
             scanner.close();
-            
+
             // parsing the string into a json object
             JSONParser parser = new JSONParser();
             JSONObject obj = (JSONObject) parser.parse(content);
-            //System.out.println(obj.get("data"));
+
             JSONObject data_obj = (JSONObject) obj.get("data");
-            //System.out.println(data_obj);
-            JSONArray results_obj = (JSONArray) data_obj.get("results");
-            System.out.println(results_obj);
+            JSONArray results_objArr = (JSONArray) data_obj.get("results");
+            final int resultsArrLength = results_objArr.toArray().length;
 
+            List<Long> charactersId = new ArrayList<Long>();
+            List<MarvelCharacter> characterList = new ArrayList<MarvelCharacter>();
 
-            //JSONArray myArr = new JSONArray();
-//            myArr.put(obj);
-            //System.out.println(myArr); // printing response
-            //System.out.println(myArr.get(0));
-//            JSONObject data_obj = (JSONObject) obj.get("data");
-//            JSONObject results_obj = (JSONObject) data_obj.get("results");
+            for (int i = 0; i < resultsArrLength; i++) {
+                System.out.println("for loop with i = " + i + " id is : " + ((JSONObject) results_objArr.get(i)).get("id").getClass().getSimpleName());
+                System.out.println("for loop with i = " + i + " name is : " + ((JSONObject) results_objArr.get(i)).get("name"));
+                System.out.println("for loop with i = " + i + " description is : " + ((JSONObject) results_objArr.get(i)).get("description"));
+                System.out.println("for loop with i = " + i + " thumbnail is : " + ((JSONObject) results_objArr.get(i)).get("thumbnail"));
 
-            //System.out.println(results_obj);
+                System.out.println("what type is id: " + ((JSONObject) results_objArr.get(i)).get("id").getClass().getSimpleName());
+                System.out.println("what type is name: " + ((JSONObject) results_objArr.get(i)).get("name").getClass().getSimpleName());
+                System.out.println("what type is description: " + ((JSONObject) results_objArr.get(i)).get("description").getClass().getSimpleName());
+                System.out.println("what type is thumbnail: " + ((JSONObject) results_objArr.get(i)).get("thumbnail").getClass().getSimpleName());
 
+                // setting constructor arguments
+                long id = (long) ((JSONObject) results_objArr.get(i)).get("id");
+                String name = (String) ((JSONObject) results_objArr.get(i)).get("name");
+                String description = (String) ((JSONObject) results_objArr.get(i)).get("description");
+                //JSONObject thumbnail = (JSONObject) ((JSONObject) results_objArr.get(i)).get("thumbnail"); TODO: fix later, doesnt let me run the MarvelCharct constructor with it
 
-            // get the required object from the above created object
-//            JSONObject results_obj = (JSONObject) data_obj.get("results");
-//            System.out.println(results_obj);
+                MarvelCharacter currentMarvel = new MarvelCharacter(id, name, description);
+                characterList.add(currentMarvel);
 
-            //Get the required data using its key
-           // System.out.println(obj.get("TotalRecovered"));
+                System.out.println("my id stored is: " + id);
+                System.out.println("my name stored is: " + name);
+                System.out.println("my description stored is: " + description);
+                //System.out.println("my thumbnail stored is: " + thumbnail);
+                charactersId.add(id);
+            }
+            System.out.println("characters id : " + charactersId);
+            System.out.println("List of Marvel characters : " + characterList);
 
-            //Get the required object from the above created object
-            //JSONObject obj = (JSONObject) data_obj.get("data");
-            //Get the required data using its key
-            //System.out.println(obj.get("results"));
+            // ------------>>>> ((JSONObject) results_objArr.get(0)).get("name")
         }
     }
 }
